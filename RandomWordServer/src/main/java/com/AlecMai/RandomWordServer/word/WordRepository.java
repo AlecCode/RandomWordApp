@@ -7,8 +7,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface WordRespository extends JpaRepository<Word, Long> {
+public interface WordRepository
+        extends JpaRepository<Word, Long> {
 
     @Query("SELECT w FROM Word w WHERE w.word = ?1")
-    List<Word> findByWord(String word);
+    List<Word> findByWord(String searchWord);
 }

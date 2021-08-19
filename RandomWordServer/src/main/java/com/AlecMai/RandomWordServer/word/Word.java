@@ -5,7 +5,16 @@ import javax.persistence.*;
 @Entity
 @Table
 public class Word {
-
+    @Id
+    @SequenceGenerator(
+            name = "word_sequence",
+            sequenceName = "word_sequence",
+            allocationSize = 1
+    )
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "word_sequence"
+    )
     private long id;
     private String word;
 

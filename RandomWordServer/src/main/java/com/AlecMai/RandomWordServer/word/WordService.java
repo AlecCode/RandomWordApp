@@ -1,36 +1,36 @@
 package com.AlecMai.RandomWordServer.word;
 
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
-@Configuration
+@Service
 public class WordService {
-    private ArrayList<String> words = new ArrayList<String>();
+    private final WordRepository wordRepository;
 
-    @Bean
-    CommandLineRunner commandLineRunner(WordRespository repository) {
-        return args -> {
-            List<S> s = repository.saveAll(words);
-        };
+    @Autowired
+    public WordService(WordRepository wordRepository) {
+        this.wordRepository = wordRepository;
     }
 
-    private void loadWords() {
-        try {
-            File wordsFile = new File("english.txt");
-            Scanner reader = new Scanner(wordsFile);
-            while (reader.hasNextLine()) {
-                String data = reader.nextLine();
-                words.add(data);
-            }
-        } catch (Exception e) {
-            System.out.println("Error Occurred");
-            e.printStackTrace();
+    public List<Word> getWords() {
+        return wordRepository.findAll();
+    }
+
+    public Word getWordByID(Long id) {
+        return wordRepository.findById(id).orElseThrow(() -> new WordNotFoundException(id));
+    }
+
+    public List<Word> getWord(String word) {
+        if (wordRepository.findByWord(word).size() == 0) {
+            throw new WordNotFoundException(word);
+        } else {
+            return wordRepository.findByWord(word);
         }
+    }
+
+    public Word getRandomWordWithStart(char firstLetter) {
+        return null;
     }
 }
