@@ -1,45 +1,31 @@
 package com.kotlinrandomwordapp
 
 import android.os.Bundle
-import android.os.CountDownTimer
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
+import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import androidx.lifecycle.lifecycleScope
 import com.example.kotlinrandomwordapp.R
 import com.example.kotlinrandomwordapp.databinding.FragmentFirstBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-// TODO: Refactor this
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
  */
 class FirstFragment : Fragment() {
 
     private var _binding: FragmentFirstBinding? = null
+    private var wordHandler: WordHandler? = null
     // This property is only valid between onCreateView and onDestroyView.
     private val binding get() = _binding!!
-
-    private val dictionaryService: DictionaryService = DictionaryService()
-
-    // TODO: Remove when ChatGPT api is added
-    private val words: List<String> = mutableListOf<String>("Apple","Earl","Lamb","Banana")
-    private var score: Int = 0
-
-    private var timerStart : Boolean = false
-    private val timer = object: CountDownTimer(10000, 1000) {
-        override fun onTick(millisUntilFinished: Long) {
-            binding.mainTimerText.text = (millisUntilFinished / 1000 + 1).toString()
-        }
-
-        override fun onFinish() {
-            binding.mainTimerText.text = "Time Up!"
-            binding.mainScoreText.text = "0"
-            score = 0
-            timerStart = false
-        }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -51,34 +37,32 @@ class FirstFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?): Unit {
         super.onViewCreated(view, savedInstanceState)
+        wordHandler = WordHandler(binding)
+        val shakeAnim: Animation = AnimationUtils.loadAnimation(this.context, R.anim.shake)
 
         binding.mainEnterButton.setOnClickListener {
-            handleUserEntry(view)
-        }
-    }
+            val mainText: TextView = view.findViewById<TextView>(R.id.main_word_text)
+            val scoreText: TextView = view.findViewById<TextView>(R.id.main_score_text)
+            val userInput: EditText = view.findViewById<EditText>(R.id.main_text_entry_field)
+            val enterButton: Button = view.findViewById<Button>(R.id.main_enter_button)
 
-    private fun handleUserEntry(view: View): Unit {
-        val mainText: TextView = view.findViewById<TextView>(R.id.main_word_text)
-        val scoreText: TextView = view.findViewById<TextView>(R.id.main_score_text)
-        val userInput: EditText = view.findViewById<EditText>(R.id.main_text_entry_field)
-        val isValid = dictionaryService.isInDictionary(userInput.text.toString())
+            viewLifecycleOwner.lifecycleScope.launch {
+                val newNonGPTVars: Pair<String, Boolean> = withContext(Dispatchers.IO) {
+                    wordHandler!!.handleUserEntry(userInput.text.toString(), mainText.text.toString())
+                    wordHandler!!.getNonGPTVar()
+                }
+                scoreText.text = newNonGPTVars.first
 
-        if ((mainText.text.isEmpty()
-                    || mainText.text.last().equals(userInput.text.first(), ignoreCase=true))
-            && isValid) {
-            timer.start()
-            score++
-            scoreText.text = score.toString()
-        } else {
-            // TODO: Figure out how to show invalid answer
-        }
-
-        // TODO: Replace new word generation with ChatGPT call
-        if (isValid) {
-            for (word in words) {
-                if (word[0].lowercase() == userInput.text[userInput.text.length - 1].lowercase()) {
-                    mainText.text = word
-                    break
+                if (newNonGPTVars.second) {
+                    view.findViewById<Button>(R.id.main_enter_button).setEnabled(false)
+                    val newWord = withContext(Dispatchers.IO) {
+                        wordHandler!!.getNewWord(userInput.text.toString())
+                    }
+                    mainText.text = newWord
+                    view.findViewById<Button>(R.id.main_enter_button).setEnabled(true)
+                    wordHandler!!.restartTimer()
+                } else {
+                    userInput.startAnimation(shakeAnim)
                 }
             }
         }

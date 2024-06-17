@@ -1,5 +1,6 @@
 package com.kotlinrandomwordapp
 
+import com.kotlinrandomwordapp.services.DictionaryService
 import org.junit.Test
 
 class DictionaryServiceTest {
@@ -7,12 +8,12 @@ class DictionaryServiceTest {
     private val dictService: DictionaryService = DictionaryService()
 
     @Test
-    fun testisInDictionaryValidWord() {
+    fun testIsInDictionaryValidWord() {
         assert(dictService.isInDictionary("Test"))
     }
 
     @Test
-    fun testisInDictionaryInvalidWord() {
+    fun testIsInDictionaryInvalidWord() {
         assert(!dictService.isInDictionary("aeshdrshsrg"))
     }
 }
