@@ -10,7 +10,6 @@ class WordHandler(binding: FragmentFirstBinding) {
     private val openAIService: OpenAIService = OpenAIService()
 
     private var score: Int = 0
-    private var currentWord: String = ""
     private var isValid = false
     private var timerStart : Boolean = false
     private val timer = object: CountDownTimer(10000, 1000) {
@@ -21,6 +20,7 @@ class WordHandler(binding: FragmentFirstBinding) {
         override fun onFinish() {
             binding.mainTimerText.text = "Time Up!"
             binding.mainScoreText.text = "0"
+            binding.mainWordText.text = ""
             score = 0
             timerStart = false
         }

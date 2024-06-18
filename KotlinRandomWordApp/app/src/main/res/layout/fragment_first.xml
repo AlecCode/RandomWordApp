@@ -6,23 +6,45 @@
     android:layout_height="match_parent"
     tools:context="com.kotlinrandomwordapp.FirstFragment">
 
+    <View
+        android:id="@+id/main_top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="95dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:background="@color/blue_dark"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/main_title_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/main_title_text"
+        android:textSize="30sp"
+        android:padding="30dp"
+        android:textColor="@color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <TextView
         android:id="@+id/main_timer_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/main_timer_text"
         android:textSize="30sp"
-        android:padding="50dp"
+        android:padding="30dp"
+        android:textColor="@color/white"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/main_title_text" />
 
     <TextView
         android:id="@+id/main_word_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/main_title_text"
+        android:text="@string/main_word_text"
         android:textSize="30sp"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/main_top_bar"
         app:layout_constraintBottom_toTopOf="@id/main_text_entry_field"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -33,10 +55,10 @@
         android:layout_height="wrap_content"
         android:text="@string/main_score_text"
         android:textSize="30sp"
-        app:layout_constraintTop_toBottomOf="@+id/main_word_text"
-        app:layout_constraintBottom_toTopOf="@+id/main_text_entry_field"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/main_text_entry_field"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <EditText
         android:id="@+id/main_text_entry_field"
@@ -48,18 +70,10 @@
         android:text=""
         android:hint="@string/main_text_entry_text"
         android:textAlignment="center"
-        app:layout_constraintTop_toBottomOf="@+id/main_word_text"
-        app:layout_constraintBottom_toTopOf="@+id/main_enter_button"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
-        android:id="@+id/main_enter_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/main_enter_button_text"
-        app:layout_constraintTop_toBottomOf="@+id/main_score_text"
+        android:background="@null"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/main_score_text" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
