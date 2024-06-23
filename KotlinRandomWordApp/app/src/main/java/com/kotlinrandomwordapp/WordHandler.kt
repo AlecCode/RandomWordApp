@@ -1,53 +1,63 @@
 package com.kotlinrandomwordapp
 
-import android.os.CountDownTimer
-import com.example.kotlinrandomwordapp.databinding.FragmentFirstBinding
 import com.kotlinrandomwordapp.services.DictionaryService
 import com.kotlinrandomwordapp.services.OpenAIService
+import java.util.PriorityQueue
 
-class WordHandler(binding: FragmentFirstBinding) {
+class WordHandler() {
     private val dictionaryService: DictionaryService = DictionaryService()
     private val openAIService: OpenAIService = OpenAIService()
 
     private var score: Int = 0
-    private var isValid = false
+    private var isValidChain: Boolean = false
+    private var inDictionary: Boolean = false
+    private var notInHistory: Boolean = false
     private var timerStart : Boolean = false
-    private val timer = object: CountDownTimer(10000, 1000) {
-        override fun onTick(millisUntilFinished: Long) {
-            binding.mainTimerText.text = (millisUntilFinished / 1000).toString()
-        }
-
-        override fun onFinish() {
-            binding.mainTimerText.text = "Time Up!"
-            binding.mainScoreText.text = "0"
-            binding.mainWordText.text = ""
-            score = 0
-            timerStart = false
-        }
-    }
+    private var wordHistory: PriorityQueue<String> = PriorityQueue<String>()
 
     fun handleUserEntry(userInput: String, mainText: String): Unit {
-        val inDictionary: Boolean = dictionaryService.isInDictionary(userInput)
+        isValidChain = if (mainText.isNotEmpty()) mainText.last().equals(userInput.first(), ignoreCase=true) else true
+        inDictionary = dictionaryService.isInDictionary(userInput)
+        notInHistory = !wordHistory.contains(userInput.lowercase())
 
-        if ((mainText.isEmpty()
-                    || mainText.last().equals(userInput.first(), ignoreCase=true))
-            && inDictionary) {
-            isValid = true
+        if (isValidChain && inDictionary && notInHistory) {
             score++
-        } else {
-            isValid = false
         }
-    }
-
-    fun getNonGPTVar(): Pair<String, Boolean> {
-        return Pair(score.toString(), isValid)
     }
 
     suspend fun getNewWord(userInput: String): String {
-        return openAIService.generateWord(userInput).toString()
+        addToHistory(userInput.lowercase())
+        val newWord: String = openAIService.generateWord(userInput, wordHistory).toString()
+        addToHistory(newWord.lowercase())
+        return newWord
     }
 
-    fun restartTimer(): Unit {
-        timer.start()
+    private fun addToHistory(word: String): Unit {
+        if (wordHistory.size >= 30) {
+            wordHistory.poll()
+        }
+
+        wordHistory.add(word)
+    }
+
+    fun getNonGPTVar(): Pair<String, Boolean> {
+        return Pair(score.toString(), inDictionary && isValidChain && notInHistory)
+    }
+
+    fun getIsValidChain(): Boolean {
+        return isValidChain
+    }
+
+    fun getInDictionary(): Boolean {
+        return inDictionary
+    }
+
+    fun getNotInHistory(): Boolean {
+        return notInHistory
+    }
+
+    fun resetScore(): Unit {
+        score = 0
+        timerStart = false
     }
 }

@@ -22,10 +22,7 @@ class OpenAIService {
 //        content = ROLE_DEF
 //    )
 
-    private var previousWords: PriorityQueue<String> = PriorityQueue<String>()
-
-    suspend fun generateWord(word: String): String? {
-        addToHistory(word)
+    suspend fun generateWord(word: String, previousWords: PriorityQueue<String>): String? {
 
         val gptBackStory: ChatMessage = ChatMessage(
             ChatRole.System,
@@ -46,14 +43,6 @@ class OpenAIService {
         val chatResponse: ChatCompletion = openAI.chatCompletion(chatRequest)
         val generatedWord: String = chatResponse.choices[0].message.content.toString()
 
-        addToHistory(generatedWord)
         return generatedWord
-    }
-
-    private fun addToHistory(word: String): Unit {
-        if (previousWords.size >= 20) {
-            previousWords.poll()
-        }
-        previousWords.add(word)
     }
 }

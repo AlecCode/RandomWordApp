@@ -20,8 +20,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/main_title_text"
-        android:textSize="30sp"
-        android:padding="30dp"
+        android:textSize="25sp"
+        android:padding="15dp"
         android:textColor="@color/white"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -36,7 +36,7 @@
         android:textColor="@color/white"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/main_title_text" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
         android:id="@+id/main_word_text"
@@ -48,6 +48,19 @@
         app:layout_constraintBottom_toTopOf="@id/main_text_entry_field"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/main_warning_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/main_warning_text"
+        android:textSize="20sp"
+        android:padding="15dp"
+        android:visibility="invisible"
+        app:layout_constraintTop_toBottomOf="@+id/main_word_text"
+        app:layout_constraintBottom_toTopOf="@+id/main_text_entry_field"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <TextView
         android:id="@+id/main_score_text"
@@ -68,7 +81,7 @@
         android:inputType="textCapWords"
         android:minHeight="60dp"
         android:text=""
-        android:hint="@string/main_text_entry_text"
+        android:hint="@string/main_text_entry_hint_text"
         android:textAlignment="center"
         android:background="@null"
         app:layout_constraintTop_toTopOf="parent"
