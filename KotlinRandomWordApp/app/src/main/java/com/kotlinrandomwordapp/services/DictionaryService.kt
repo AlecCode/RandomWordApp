@@ -1,9 +1,9 @@
 package com.kotlinrandomwordapp.services
 
 import com.kotlinrandomwordapp.constants.DICTIONARY_URL
+import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.Call
 import okhttp3.Response
 
 class DictionaryService {

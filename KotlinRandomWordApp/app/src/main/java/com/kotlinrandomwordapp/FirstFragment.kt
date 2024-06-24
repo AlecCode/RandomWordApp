@@ -1,8 +1,10 @@
 package com.kotlinrandomwordapp
 
+import android.graphics.Color
 import android.os.Bundle
 import android.os.CountDownTimer
-import androidx.fragment.app.Fragment
+import android.text.Spannable
+import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +13,8 @@ import android.view.animation.AnimationUtils
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.TextView
+import androidx.core.text.toSpannable
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.kotlinrandomwordapp.R
 import com.example.kotlinrandomwordapp.databinding.FragmentFirstBinding
@@ -21,6 +25,7 @@ import com.kotlinrandomwordapp.constants.TOO_RECENT_WORD
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.ArrayDeque
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -36,13 +41,15 @@ class FirstFragment : Fragment() {
         }
 
         override fun onFinish() {
-            binding.mainTimerText.text = "Time Up!"
+            binding.mainTimerText.text = "Time!"
             binding.mainScoreText.text = "0"
             binding.mainWordText.text = ""
+            binding.mainWordHistory.text = ""
+            wordHandler.reset()
         }
     }
 
-    private var wordHandler: WordHandler? = WordHandler()
+    private var wordHandler: WordHandler = WordHandler()
     private var gptInFlight: Boolean = false
     private var animations: MutableMap<String, Animation> = mutableMapOf()
 
@@ -91,25 +98,30 @@ class FirstFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            val newNonGPTVars: Pair<String, Boolean> = withContext(Dispatchers.IO) {
-                wordHandler!!.handleUserEntry(userInput.text.toString(), mainText.text.toString())
-                wordHandler!!.getNonGPTVar()
+            withContext(Dispatchers.IO) {
+                wordHandler.handleUserEntry(userInput.text.toString(), mainText.text.toString())
             }
-            scoreText.text = newNonGPTVars.first
 
-            if (newNonGPTVars.second) {
+            scoreText.text = wordHandler.getScore().toString()
+
+            if (wordHandler.getCombinedFlags()) {
                 gptInFlight = true
                 mainText.text = withContext(Dispatchers.IO) {
-                    wordHandler!!.getNewWord(userInput.text.toString())
+                    wordHandler.getNewWord(userInput.text.toString())
                 }
                 userInput.text.clear()
                 gptInFlight = false
 
                 timer.start()
-                wordHandler!!.resetScore()
             } else {
                 userInput.startAnimation(animations["shake"])
                 showWarningText(view)
+            }
+
+            if (!wordHandler.getIsNew()) {
+                showWordHistory(view, userInput.text.toString())
+            } else {
+                showWordHistory(view, "")
             }
         }
     }
@@ -118,12 +130,12 @@ class FirstFragment : Fragment() {
         val warningText: TextView = view.findViewById<TextView>(R.id.main_warning_text)
         val mainText: TextView = view.findViewById<TextView>(R.id.main_word_text)
 
-        if (!wordHandler!!.getInDictionary()) {
+        if (!wordHandler.getInDictionary()) {
             warningText.text = NOT_IN_DICTIONARY
-        } else if (!wordHandler!!.getIsValidChain()) {
+        } else if (!wordHandler.getIsValidChain()) {
             val chainMsg: String = NOT_VALID_CHAIN + mainText.text.last().uppercase() + "."
             warningText.text = chainMsg
-        } else if (!wordHandler!!.getNotInHistory()) {
+        } else if (!wordHandler.getIsNew()) {
             warningText.text = TOO_RECENT_WORD
         } else {
             warningText.text = INPUT_TOO_SOON
@@ -133,5 +145,30 @@ class FirstFragment : Fragment() {
         warningText.startAnimation(animations["fadeIn"])
         warningText.startAnimation(animations["fadeOut"])
         warningText.visibility = View.INVISIBLE
+    }
+
+    private fun showWordHistory(view: View, highlight: String): Unit {
+        val historyText: TextView = view.findViewById<TextView>(R.id.main_word_history)
+        val history: ArrayDeque<String> = wordHandler.getWordHistory()
+
+        var wordString: String = ""
+        for (i in history) {
+            val formattedWord: String = i.first().uppercase() + i.substring(1..<i.length)
+            wordString = "$formattedWord $wordString"
+        }
+
+        if (highlight.isEmpty()) {
+            historyText.text = wordString
+        } else {
+            val span: Spannable = wordString.toSpannable()
+            val start: Int = wordString.lowercase().indexOf(highlight.lowercase())
+
+            span.setSpan(
+                ForegroundColorSpan(Color.RED),
+                start,
+                start + highlight.length,
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            historyText.setText(span, TextView.BufferType.SPANNABLE)
+        }
     }
 }

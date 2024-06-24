@@ -5,8 +5,9 @@
 
     <string name="main_title_text">Chain\nWords</string>
     <string name="main_timer_text">10</string>
-    <string name="main_warning_text">Transparency Test</string>
+    <string name="main_word_history_text"></string>
     <string name="main_word_text"></string>
+    <string name="main_warning_text"></string>
     <string name="main_text_entry_hint_text">Enter a word</string>
     <string name="main_score_text">0</string>
 </resources>
