@@ -1,8 +1,13 @@
 package com.kotlinrandomwordapp
 
+import android.content.Context
 import android.graphics.Color
+import android.media.MediaPlayer
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.text.Spannable
 import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
@@ -18,7 +23,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.kotlinrandomwordapp.R
 import com.example.kotlinrandomwordapp.databinding.FragmentFirstBinding
+import com.kotlinrandomwordapp.constants.GAME_TIME
 import com.kotlinrandomwordapp.constants.INPUT_TOO_SOON
+import com.kotlinrandomwordapp.constants.INTERVAL
 import com.kotlinrandomwordapp.constants.NOT_IN_DICTIONARY
 import com.kotlinrandomwordapp.constants.NOT_VALID_CHAIN
 import com.kotlinrandomwordapp.constants.TOO_RECENT_WORD
@@ -35,12 +42,13 @@ class FirstFragment : Fragment() {
     private var _binding: FragmentFirstBinding? = null
     // This property is only valid between onCreateView and onDestroyView.
     private val binding get() = _binding!!
-    private val timer = object: CountDownTimer(10000, 1000) {
+    private val timer = object: CountDownTimer(GAME_TIME, INTERVAL) {
         override fun onTick(millisUntilFinished: Long) {
-            binding.mainTimerText.text = (millisUntilFinished / 1000).toString()
+            binding.mainTimerText.text = (millisUntilFinished / INTERVAL).toString()
         }
 
         override fun onFinish() {
+            sounds["bell"]?.start()
             binding.mainTimerText.text = "Time!"
             binding.mainScoreText.text = "0"
             binding.mainWordText.text = ""
@@ -52,11 +60,12 @@ class FirstFragment : Fragment() {
     private var wordHandler: WordHandler = WordHandler()
     private var gptInFlight: Boolean = false
     private var animations: MutableMap<String, Animation> = mutableMapOf()
+    private var sounds: MutableMap<String, MediaPlayer> = mutableMapOf()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = FragmentFirstBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -66,6 +75,12 @@ class FirstFragment : Fragment() {
         animations["shake"] = AnimationUtils.loadAnimation(this.context, R.anim.shake)
         animations["fadeIn"] = AnimationUtils.loadAnimation(this.context, R.anim.fade_in)
         animations["fadeOut"] = AnimationUtils.loadAnimation(this.context, R.anim.fade_out)
+        sounds["pop"] = MediaPlayer.create(this.context, R.raw.pop)
+        sounds["bell"] = MediaPlayer.create(this.context, R.raw.bell)
+        sounds["error"] = MediaPlayer.create(this.context, R.raw.error)
+
+        sounds["bell"]?.setVolume(0.1f, 0.1f)
+        sounds["error"]?.setVolume(0.5f, 0.5f)
 
         binding.mainTextEntryField.setFocusableInTouchMode(true)
         binding.mainTextEntryField.requestFocus()
@@ -94,6 +109,7 @@ class FirstFragment : Fragment() {
         if (gptInFlight) {
             userInput.startAnimation(animations["shake"])
             showWarningText(view)
+            vibratePhone()
             return
         }
 
@@ -105,6 +121,8 @@ class FirstFragment : Fragment() {
             scoreText.text = wordHandler.getScore().toString()
 
             if (wordHandler.getCombinedFlags()) {
+                sounds["pop"]?.start()
+
                 gptInFlight = true
                 mainText.text = withContext(Dispatchers.IO) {
                     wordHandler.getNewWord(userInput.text.toString())
@@ -114,8 +132,10 @@ class FirstFragment : Fragment() {
 
                 timer.start()
             } else {
+                sounds["error"]?.start()
                 userInput.startAnimation(animations["shake"])
                 showWarningText(view)
+                vibratePhone()
             }
 
             if (!wordHandler.getIsNew()) {
@@ -170,5 +190,20 @@ class FirstFragment : Fragment() {
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             historyText.setText(span, TextView.BufferType.SPANNABLE)
         }
+    }
+
+    private fun vibratePhone() {
+        val vibrator: Vibrator = context?.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+
+        if (Build.VERSION.SDK_INT >= 31) {
+            vibrator.vibrate(
+                VibrationEffect.startComposition().addPrimitive(
+                    VibrationEffect.Composition.PRIMITIVE_THUD, 1.0f, 20
+                ).compose()
+            )
+        } else {
+            vibrator.vibrate(VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE))
+        }
+
     }
 }
