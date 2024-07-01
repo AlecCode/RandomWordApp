@@ -5,41 +5,52 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.kotlinrandomwordapp.FirstFragment">
-    
-    <View
-        android:id="@+id/main_top_bar"
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/top_bar_cluster"
         android:layout_width="match_parent"
-        android:layout_height="95dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_height="wrap_content"
         android:background="@color/blue_dark"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/title_textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/main_title_text"
+            android:textSize="25sp"
+            android:textColor="@color/white"
+            android:padding="15dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <ProgressBar
+            android:id="@+id/timer_progressBar"
+            style="@android:style/Widget.DeviceDefault.ProgressBar.Horizontal"
+            android:layout_width="@+id/timer_textView"
+            android:layout_height="10dp"
+            android:progress="0"
+            app:layout_constraintTop_toBottomOf="@+id/timer_textView"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/timer_textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/main_timer_text"
+            android:textSize="30sp"
+            android:textColor="@color/white"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <TextView
-        android:id="@+id/main_title_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/main_title_text"
-        android:textSize="25sp"
-        android:padding="15dp"
-        android:textColor="@color/white"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
-        android:id="@+id/main_timer_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/main_timer_text"
-        android:textSize="30sp"
-        android:padding="30dp"
-        android:textColor="@color/white"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
-        android:id="@+id/main_word_history"
+        android:id="@+id/word_history_textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/main_word_history_text"
@@ -50,59 +61,85 @@
         android:gravity="center_horizontal"
         android:alpha="0.6"
         app:layout_constrainedWidth="true"
-        app:layout_constraintTop_toBottomOf="@+id/main_top_bar"
+        app:layout_constraintTop_toBottomOf="@+id/top_bar_cluster"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
     <TextView
-        android:id="@+id/main_word_text"
+        android:id="@+id/generated_word_textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/main_word_text"
         android:textSize="30sp"
-        app:layout_constraintTop_toBottomOf="@+id/main_top_bar"
-        app:layout_constraintBottom_toTopOf="@id/main_text_entry_field"
+        app:layout_constraintTop_toBottomOf="@+id/top_bar_cluster"
+        app:layout_constraintBottom_toTopOf="@id/entry_cluster"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
-        android:id="@+id/main_warning_text"
+        android:id="@+id/hint_textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/main_warning_text"
         android:textSize="20sp"
         android:padding="15dp"
         android:visibility="invisible"
-        app:layout_constraintTop_toBottomOf="@+id/main_word_text"
-        app:layout_constraintBottom_toTopOf="@+id/main_text_entry_field"
+        app:layout_constraintTop_toBottomOf="@+id/generated_word_textView"
+        app:layout_constraintBottom_toTopOf="@+id/entry_cluster"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <TextView
-        android:id="@+id/main_score_text"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/entry_cluster"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/main_score_text"
-        android:textSize="30sp"
+        android:background="@color/blue_light"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/main_text_entry_field"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent">
 
-    <EditText
-        android:id="@+id/main_text_entry_field"
+        <TextView
+            android:id="@+id/score_textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/main_score_text"
+            android:textSize="30sp"
+            android:textColor="@color/white"
+            android:paddingTop="20dp"
+            android:paddingBottom="20dp"
+            android:paddingEnd="40dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/user_entry_editText"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <EditText
+            android:id="@+id/user_entry_editText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:inputType="textCapWords|textVisiblePassword"
+            android:minHeight="60dp"
+            android:text=""
+            android:hint="@string/main_text_entry_hint_text"
+            android:textAlignment="center"
+            android:background="@null"
+            android:textColor="@color/white"
+            android:textColorHint="@color/white"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/score_textView" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <TextView
+        android:id="@+id/previous_high_textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:ems="10"
-        android:inputType="textCapWords"
-        android:minHeight="60dp"
         android:text=""
-        android:hint="@string/main_text_entry_hint_text"
-        android:textAlignment="center"
-        android:background="@null"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/word_history_textView"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/main_score_text" />
-
+        app:layout_constraintEnd_toEndOf="parent"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

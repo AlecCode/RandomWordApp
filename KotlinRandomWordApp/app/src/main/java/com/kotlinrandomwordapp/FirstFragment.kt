@@ -2,6 +2,7 @@ package com.kotlinrandomwordapp
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Outline
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
@@ -10,9 +11,11 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.text.Spannable
 import android.text.style.ForegroundColorSpan
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewOutlineProvider
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.view.inputmethod.EditorInfo
@@ -23,11 +26,14 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.kotlinrandomwordapp.R
 import com.example.kotlinrandomwordapp.databinding.FragmentFirstBinding
+import com.kotlinrandomwordapp.constants.EMPTY_ENTRY
 import com.kotlinrandomwordapp.constants.GAME_TIME
 import com.kotlinrandomwordapp.constants.INPUT_TOO_SOON
-import com.kotlinrandomwordapp.constants.INTERVAL
+import com.kotlinrandomwordapp.constants.LONGER_INPUT
 import com.kotlinrandomwordapp.constants.NOT_IN_DICTIONARY
 import com.kotlinrandomwordapp.constants.NOT_VALID_CHAIN
+import com.kotlinrandomwordapp.constants.TICK
+import com.kotlinrandomwordapp.constants.TIME_UP
 import com.kotlinrandomwordapp.constants.TOO_RECENT_WORD
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,18 +48,28 @@ class FirstFragment : Fragment() {
     private var _binding: FragmentFirstBinding? = null
     // This property is only valid between onCreateView and onDestroyView.
     private val binding get() = _binding!!
-    private val timer = object: CountDownTimer(GAME_TIME, INTERVAL) {
+    private val timer = object: CountDownTimer(GAME_TIME, TICK) {
         override fun onTick(millisUntilFinished: Long) {
-            binding.mainTimerText.text = (millisUntilFinished / INTERVAL).toString()
+            binding.timerTextView.text = (millisUntilFinished / 1000 + 1).toString()
+            binding.timerProgressBar.progress = ((millisUntilFinished * 100) / GAME_TIME).toInt()
         }
 
         override fun onFinish() {
             sounds["bell"]?.start()
-            binding.mainTimerText.text = "Time!"
-            binding.mainScoreText.text = "0"
-            binding.mainWordText.text = ""
-            binding.mainWordHistory.text = ""
             wordHandler.reset()
+
+            binding.timerTextView.text = TIME_UP
+            binding.scoreTextView.text = "0"
+            binding.generatedWordTextView.text = ""
+            binding.hintTextView.text = ""
+            binding.wordHistoryTextView.text = ""
+            binding.timerProgressBar.progress = 0
+        }
+
+        fun reset() {
+            binding.timerProgressBar.progress = 100
+            binding.timerTextView.text = (GAME_TIME / 1000).toString()
+            cancel()
         }
     }
 
@@ -66,6 +82,7 @@ class FirstFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+
         _binding = FragmentFirstBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -82,12 +99,13 @@ class FirstFragment : Fragment() {
         sounds["bell"]?.setVolume(0.1f, 0.1f)
         sounds["error"]?.setVolume(0.5f, 0.5f)
 
-        binding.mainTextEntryField.setFocusableInTouchMode(true)
-        binding.mainTextEntryField.requestFocus()
-        binding.mainTextEntryField.setOnEditorActionListener(
+        roundViewCorners()
+        binding.userEntryEditText.setFocusableInTouchMode(true)
+        binding.userEntryEditText.requestFocus()
+        binding.userEntryEditText.setOnEditorActionListener(
             TextView.OnEditorActionListener { _, actionID, _ ->
                 if (actionID == EditorInfo.IME_ACTION_DONE) {
-                    onEnterFromKeyboard(view)
+                    handleUserEntry()
                     return@OnEditorActionListener true
                 }
                 false
@@ -95,21 +113,43 @@ class FirstFragment : Fragment() {
         )
     }
 
+    private fun roundViewCorners() {
+        var mOutlineProvider: ViewOutlineProvider = object : ViewOutlineProvider() {
+            override fun getOutline(view: View, outline: Outline) {
+                val cornerRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 32f, resources.displayMetrics).toInt()
+
+                outline.setRoundRect(0, 0 - cornerRadius, view.width, view.height, 32f)
+            }
+        }
+        binding.topBarCluster.apply {
+            outlineProvider = mOutlineProvider
+            clipToOutline = true
+        }
+
+        mOutlineProvider = object : ViewOutlineProvider() {
+            override fun getOutline(view: View, outline: Outline) {
+                outline.setRoundRect(0, 0, view.width, view.height, 128f)
+            }
+        }
+        binding.entryCluster.apply {
+            outlineProvider = mOutlineProvider
+            clipToOutline = true
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
 
-    private fun onEnterFromKeyboard(view: View): Unit {
-        val mainText: TextView = view.findViewById<TextView>(R.id.main_word_text)
-        val scoreText: TextView = view.findViewById<TextView>(R.id.main_score_text)
-        val userInput: EditText = view.findViewById<EditText>(R.id.main_text_entry_field)
+    private fun handleUserEntry(): Unit {
+        val mainText: TextView = binding.generatedWordTextView
+        val scoreText: TextView = binding.scoreTextView
+        val userInput: EditText = binding.userEntryEditText
 
         // Don't take new input if the GPT request is still in flight
-        if (gptInFlight) {
-            userInput.startAnimation(animations["shake"])
-            showWarningText(view)
-            vibratePhone()
+        if (gptInFlight || userInput.text.isEmpty()) {
+            showUserError()
             return
         }
 
@@ -118,58 +158,64 @@ class FirstFragment : Fragment() {
                 wordHandler.handleUserEntry(userInput.text.toString(), mainText.text.toString())
             }
 
-            scoreText.text = wordHandler.getScore().toString()
+            scoreText.text = wordHandler.score.toString()
 
             if (wordHandler.getCombinedFlags()) {
                 sounds["pop"]?.start()
+                timer.reset()
+                if (wordHandler.longer) showHintText()
 
                 gptInFlight = true
                 mainText.text = withContext(Dispatchers.IO) {
                     wordHandler.getNewWord(userInput.text.toString())
                 }
-                userInput.text.clear()
                 gptInFlight = false
 
                 timer.start()
             } else {
-                sounds["error"]?.start()
-                userInput.startAnimation(animations["shake"])
-                showWarningText(view)
-                vibratePhone()
+                showUserError()
             }
 
-            if (!wordHandler.getIsNew()) {
-                showWordHistory(view, userInput.text.toString())
-            } else {
-                showWordHistory(view, "")
-            }
+            showWordHistory(userInput.text.toString(), !wordHandler.isNew)
+            userInput.text.clear()
         }
     }
 
-    private fun showWarningText(view: View): Unit {
-        val warningText: TextView = view.findViewById<TextView>(R.id.main_warning_text)
-        val mainText: TextView = view.findViewById<TextView>(R.id.main_word_text)
+    private fun showUserError(): Unit {
+        sounds["error"]?.start()
+        binding.userEntryEditText.startAnimation(animations["shake"])
+        showHintText()
+        vibratePhone()
+    }
 
-        if (!wordHandler.getInDictionary()) {
-            warningText.text = NOT_IN_DICTIONARY
-        } else if (!wordHandler.getIsValidChain()) {
+    private fun showHintText(): Unit {
+        val hintText: TextView = binding.hintTextView
+        val mainText: TextView = binding.generatedWordTextView
+
+        if (wordHandler.longer) {
+            hintText.text = LONGER_INPUT
+        } else if (binding.userEntryEditText.text.isEmpty()) {
+            hintText.text = EMPTY_ENTRY
+        } else if (!wordHandler.inDictionary) {
+            hintText.text = NOT_IN_DICTIONARY
+        } else if (!wordHandler.isValidChain) {
             val chainMsg: String = NOT_VALID_CHAIN + mainText.text.last().uppercase() + "."
-            warningText.text = chainMsg
-        } else if (!wordHandler.getIsNew()) {
-            warningText.text = TOO_RECENT_WORD
+            hintText.text = chainMsg
+        } else if (!wordHandler.isNew) {
+            hintText.text = TOO_RECENT_WORD
         } else {
-            warningText.text = INPUT_TOO_SOON
+            hintText.text = INPUT_TOO_SOON
         }
 
-        warningText.visibility = View.VISIBLE
-        warningText.startAnimation(animations["fadeIn"])
-        warningText.startAnimation(animations["fadeOut"])
-        warningText.visibility = View.INVISIBLE
+        hintText.visibility = View.VISIBLE
+        hintText.startAnimation(animations["fadeIn"])
+        hintText.startAnimation(animations["fadeOut"])
+        hintText.visibility = View.INVISIBLE
     }
 
-    private fun showWordHistory(view: View, highlight: String): Unit {
-        val historyText: TextView = view.findViewById<TextView>(R.id.main_word_history)
-        val history: ArrayDeque<String> = wordHandler.getWordHistory()
+    private fun showWordHistory(highlight: String, doHighlight: Boolean): Unit {
+        val historyText: TextView = binding.wordHistoryTextView
+        val history: ArrayDeque<String> = wordHandler.wordHistory
 
         var wordString: String = ""
         for (i in history) {
@@ -177,9 +223,7 @@ class FirstFragment : Fragment() {
             wordString = "$formattedWord $wordString"
         }
 
-        if (highlight.isEmpty()) {
-            historyText.text = wordString
-        } else {
+        if (doHighlight) {
             val span: Spannable = wordString.toSpannable()
             val start: Int = wordString.lowercase().indexOf(highlight.lowercase())
 
@@ -189,6 +233,8 @@ class FirstFragment : Fragment() {
                 start + highlight.length,
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             historyText.setText(span, TextView.BufferType.SPANNABLE)
+        } else {
+            historyText.text = wordString
         }
     }
 
@@ -204,6 +250,5 @@ class FirstFragment : Fragment() {
         } else {
             vibrator.vibrate(VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE))
         }
-
     }
 }

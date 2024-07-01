@@ -8,21 +8,35 @@ class WordHandler() {
     private val dictionaryService: DictionaryService = DictionaryService()
     private val openAIService: OpenAIService = OpenAIService()
 
-    private var score: Int = 0
-    private var isValidChain: Boolean = false
-    private var inDictionary: Boolean = false
-    private var isNew: Boolean = false
-    private var wordHistory: ArrayDeque<String> = ArrayDeque<String>()
+    var score: Int = 0
+        private set
+    var isValidChain: Boolean = false
+        private set
+    var inDictionary: Boolean = false
+        private set
+    var isNew: Boolean = false
+        private set
+    var longer: Boolean = false
+        private set
+    var wordHistory: ArrayDeque<String> = ArrayDeque<String>()
+        private set
 
-    fun handleUserEntry(userInput: String, mainText: String): Unit {
-        val user: String = userInput.lowercase()
-        val main: String = mainText.lowercase()
-        isValidChain = if (main.isNotEmpty()) main.last() == user.first() else true
-        inDictionary = dictionaryService.isInDictionary(user)
-        isNew = !wordHistory.contains(user)
+    fun handleUserEntry(userInput: String, givenText: String): Unit {
+        val entry: String = userInput.lowercase()
+        val given: String = givenText.lowercase()
+        isValidChain = if (given.isNotEmpty()) given.last() == entry.first() else true
+        inDictionary = dictionaryService.isInDictionary(entry)
+        isNew = !wordHistory.contains(entry)
 
         if (isValidChain && inDictionary && isNew) {
             score++
+
+            if (userInput.length > givenText.length && given.isNotEmpty()) {
+                score++
+                longer = true
+            } else {
+                longer = false
+            }
         }
     }
 
@@ -43,28 +57,8 @@ class WordHandler() {
         wordHistory.add(word)
     }
 
-    fun getScore(): Int {
-        return score
-    }
-
     fun getCombinedFlags(): Boolean {
         return inDictionary && isValidChain && isNew
-    }
-
-    fun getIsValidChain(): Boolean {
-        return isValidChain
-    }
-
-    fun getInDictionary(): Boolean {
-        return inDictionary
-    }
-
-    fun getIsNew(): Boolean {
-        return isNew
-    }
-
-    fun getWordHistory(): ArrayDeque<String> {
-        return wordHistory
     }
 
     fun reset(): Unit {
